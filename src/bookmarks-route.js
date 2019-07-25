@@ -1,41 +1,39 @@
 const express = require('express');
 const logger = require('./logger');
-const { bookmarks } = require('./store');
 const cuid = require('cuid');
-
+const BookmarksService = require('./bookmarks-service');
 
 const bookmarksRouter = express.Router();
 const bodyParser = express.json();
 
 bookmarksRouter
   .route('/bookmarks')
-  .get((req, res) => {
-    res.json(bookmarks);
+  .get((req, res, next) => {
+    const db = req.app.get('db');
+    BookmarksService.getAllBookmarks(db)
+      .then(bookmarks => {
+        res.json(bookmarks);
+      })
+      .catch(next)
   })
   .post(bodyParser, (req, res) => {
     console.log(req.body);
     const { title, description, rating, url } = req.body;
     console.log(title, description, rating, url);
 
-    if(!title) {
+    if (!title) {
       logger.error('title is required');
-      return res
-        .status(400)
-        .send('Invalid data');
+      return res.status(400).send('Invalid data');
     }
 
-    if(!url) {
+    if (!url) {
       logger.error('url is required');
-      return res
-        .status(400)
-        .send('Invalid data');
+      return res.status(400).send('Invalid data');
     }
 
-    if(!description) {
+    if (!description) {
       logger.error('description is required');
-      return res
-        .status(400)
-        .send('Invalid data');
+      return res.status(400).send('Invalid data');
     }
 
     const id = cuid();
@@ -60,18 +58,20 @@ bookmarksRouter
 
 bookmarksRouter
   .route('/bookmarks/:id')
-  .get((req, res) => {
+  .get((req, res, next) => {
+    const db = req.app.get('db');
     const { id } = req.params;
-    const bookmark = bookmarks.find(bookmark => bookmark.id == id);
-
-    if(!bookmark) {
-      logger.error(`Bookmark with ${id} not found`);
-      return res
-        .status(404)
-        .send('Bookmark not found');
-    }
-
-    res.json(bookmark);
+    BookmarksService.getById(db, id)
+      .then(bookmark => {
+        if (!bookmark) {
+          logger.error(`Bookmark with ${id} not found`);
+          return res.status(404).json({
+            error: {message: 'Bookmark doesn\'t exist' }
+          });
+        }
+        res.json(bookmark);
+      })
+      .catch(next);
   })
   .delete((req, res) => {
     const { id } = req.params;
@@ -80,18 +80,13 @@ bookmarksRouter
 
     if (bookmarkIndex === -1) {
       logger.error(`Card with id ${id} not found.`);
-      return res
-        .status(404)
-        .send('Not found');
+      return res.status(404).send('Not found');
     }
 
     bookmarks.splice(bookmarkIndex, 1);
     logger.info(`Card with id ${id} deleted.`);
 
-    res
-      .status(204)
-      .end();
-
+    res.status(204).end();
   });
 
 module.exports = bookmarksRouter;

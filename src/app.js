@@ -4,7 +4,8 @@ const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
 const { NODE_ENV } = require('./config');
-const bookmarksRouter = require('./bookmarks-route')
+const bookmarksRouter = require('./bookmarks-route');
+const BookmarksService = require('./bookmarks-service');
 
 const app = express();
 
@@ -16,15 +17,15 @@ app.use(morgan(morganOption));
 app.use(helmet());
 app.use(cors());
 
-// app.use(function validateBearerToken(req, res, next){
-//   const apiToken
-
-// })
-
 app.use(bookmarksRouter);
 
-app.get('/', (req, res) => {
-  res.send('Hello, boilerplate!');
+app.get('/bookmarks', (req, res, next) => {
+  const db = req.app.get('db');
+  BookmarksService.getAllBookmarks(db)
+    .then(bookmarks => {
+      res.json(bookmarks);
+    })
+    .catch(next);
 });
 
 app.use(function errorHandler(error, req, res, next) {
