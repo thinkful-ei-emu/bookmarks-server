@@ -16,7 +16,7 @@ app.use(morgan(morganOption));
 app.use(helmet());
 app.use(cors());
 
-app.use(bookmarksRouter);
+app.use('/api/bookmarks', bookmarksRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello, world!');
@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
 
 app.get('/xss', (req, res) => {
   res.cookie('secretToken', '1231341234');
-  res.sendFile(__dirnam + '/xss-example.html');
+  res.sendFile(__dirname + '/xss-example.html');
 });
 
 app.use(function errorHandler(error, req, res, next) {
