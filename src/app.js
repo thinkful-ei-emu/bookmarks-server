@@ -4,8 +4,7 @@ const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
 const { NODE_ENV } = require('./config');
-const bookmarksRouter = require('./bookmarks-route');
-const BookmarksService = require('./bookmarks-service');
+const bookmarksRouter = require('./bookmarks/bookmarks-route');
 
 const app = express();
 
@@ -19,13 +18,13 @@ app.use(cors());
 
 app.use(bookmarksRouter);
 
-app.get('/bookmarks', (req, res, next) => {
-  const db = req.app.get('db');
-  BookmarksService.getAllBookmarks(db)
-    .then(bookmarks => {
-      res.json(bookmarks);
-    })
-    .catch(next);
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
+});
+
+app.get('/xss', (req, res) => {
+  res.cookie('secretToken', '1231341234');
+  res.sendFile(__dirnam + '/xss-example.html');
 });
 
 app.use(function errorHandler(error, req, res, next) {
